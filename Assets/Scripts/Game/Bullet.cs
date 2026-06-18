@@ -28,6 +28,11 @@ public class Bullet : MonoBehaviour
         transform.rotation = Quaternion.Euler(0f, 0f, angle - 90f);
     }
 
+    public void OnHitTarget()
+    {
+        gameObject.SetActive(false);
+    }
+
     private void Update()
     {
         transform.localPosition = (Vector2)transform.localPosition + _bulletDirection * _bulletSpeed * Time.deltaTime;
