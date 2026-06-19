@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 3496661085337786209}
   - component: {fileID: 4296335682475846612}
   m_Layer: 5
-  m_Name: Enemy Test
+  m_Name: Enemy Chaser
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -38,7 +38,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 93, y: 84}
+  m_SizeDelta: {x: 82, y: 84}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6436807399157649051
 CanvasRenderer:
@@ -68,7 +68,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: e7c47a8507bdcc040b7de894434b2e8d, type: 3}
+  m_Sprite: {fileID: -833959173342566841, guid: cd7705930f14e9543bfe2d0e2f3ca397, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -90,12 +90,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b3e8aad67142e442b5dba1a6a4a3fc6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  health: 10
-  moveSpeed: 200
+  health: 15
+  collisionDamage: 3
+  moveSpeed: 250
   bulletDamage: 1
   bulletSpeed: 500
-  bulletFireCooldown: 0.5
+  bulletFireCooldown: 0
   isShooting: 0
+  movementType: 2
 --- !u!61 &3496661085337786209
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -140,7 +142,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 93, y: 84}
+  m_Size: {x: 82, y: 84}
   m_EdgeRadius: 0
 --- !u!50 &4296335682475846612
 Rigidbody2D:

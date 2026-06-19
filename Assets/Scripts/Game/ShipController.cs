@@ -4,7 +4,8 @@ using System.Collections.Generic;
 
 public class ShipController : MonoBehaviour
 {
-    // Serialized
+    public int health;
+
     [SerializeField] private float moveSpeed;
     [SerializeField] private float bulletFireCooldown;
     [SerializeField] private float bulletSpeed;
@@ -12,11 +13,12 @@ public class ShipController : MonoBehaviour
     [SerializeField] private GameObject aimCursor;
     [SerializeField] private Bullet bulletPrefab;
     [SerializeField] private Transform bulletParent;
+    [SerializeField] private float hitCooldown;
 
-    // Input Values
     private Vector2 _moveDir;
     private Vector2 _mousePos;
     private bool _isAttacking;
+    private bool _isOnHitCooldown;
 
     private static readonly Vector2 _screenBounds = new Vector2(820f, 1000f);
     private InputSystem_Actions _playerInputs;
@@ -29,6 +31,7 @@ public class ShipController : MonoBehaviour
         _playerInputs = new InputSystem_Actions();
         _playerInputs.Enable();
         _mainCam = Camera.main;
+        _isOnHitCooldown = false;
 
         _bulletPool = new List<Bullet>();
         StartCoroutine(BulletFireCoroutine());
@@ -96,6 +99,68 @@ public class ShipController : MonoBehaviour
             }
 
             yield return null;
+        }
+    }
+
+    private void OnPlayerDied()
+    {
+        Debug.Log("Player Died!");
+    }
+
+    private void OnHit(Bullet bullet)
+    {
+        bullet.OnHitTarget();
+
+        if (_isOnHitCooldown) return;
+
+        health -= bullet.bulletDamage;
+        StartCoroutine(HitCooldown());
+
+        if (health <= 0)
+        {
+            OnPlayerDied();
+        }
+    }
+
+    private void OnHit(EnemyBase enemy)
+    {
+        if (_isOnHitCooldown) return;
+
+        health -= enemy.collisionDamage;
+        StartCoroutine(HitCooldown());
+
+        if (health <= 0)
+        {
+            OnPlayerDied();
+        }
+    }
+
+    private IEnumerator HitCooldown()
+    {
+        _isOnHitCooldown = true;
+
+        yield return new WaitForSeconds(hitCooldown);
+
+        _isOnHitCooldown = false;
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.TryGetComponent(out Bullet bullet))
+        {
+            if (bullet.bulletType == BulletType.Enemy)
+            {
+                OnHit(bullet);
+            }
+        }
+    }
+
+
+    private void OnCollisionStay2D(Collision2D other)
+    {
+        if (other.gameObject.TryGetComponent(out EnemyBase enemy))
+        {
+            OnHit(enemy);
         }
     }
 }
