@@ -60,7 +60,7 @@ public class EnemyBase : MonoBehaviour
 
         if (health <= 0)
         {
-            Destroy(gameObject);
+            enemyManager.OnEnemyDied(this);
         }
     }
 

@@ -113,6 +113,7 @@ public class ShipController : MonoBehaviour
 
         if (_isOnHitCooldown) return;
 
+        Debug.Log($"Player hit for {bullet.bulletDamage}");
         health -= bullet.bulletDamage;
         StartCoroutine(HitCooldown());
 
@@ -126,6 +127,7 @@ public class ShipController : MonoBehaviour
     {
         if (_isOnHitCooldown) return;
 
+        Debug.Log($"Player hit for {enemy.collisionDamage}");
         health -= enemy.collisionDamage;
         StartCoroutine(HitCooldown());
 

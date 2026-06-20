@@ -636,6 +636,8 @@ MonoBehaviour:
   bulletParent: {fileID: 1383974784}
   enemyPrefabs:
   - {fileID: 6891539466013288152, guid: a38769b9d437f3e4fa63121c7bce5952, type: 3}
+  - {fileID: 6891539466013288152, guid: 200be2820d001de4f8f60862beddd053, type: 3}
+  - {fileID: 6891539466013288152, guid: 7b2d1b40effea334d9624fe85e1d2359, type: 3}
 --- !u!1 &1014919691
 GameObject:
   m_ObjectHideFlags: 0
@@ -684,7 +686,7 @@ GameObject:
   - component: {fileID: 1171594294}
   - component: {fileID: 1171594293}
   m_Layer: 5
-  m_Name: Canvas
+  m_Name: Game Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
