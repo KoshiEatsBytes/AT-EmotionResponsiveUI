@@ -113,7 +113,7 @@ public class ShipController : MonoBehaviour
 
         if (_isOnHitCooldown) return;
 
-        Debug.Log($"Player hit for {bullet.bulletDamage}");
+        EmotionResponseManager.Instance.EmotionInput(EmotionInputType.PlayerHitByBullet, bullet);
         health -= bullet.bulletDamage;
         StartCoroutine(HitCooldown());
 
@@ -127,7 +127,7 @@ public class ShipController : MonoBehaviour
     {
         if (_isOnHitCooldown) return;
 
-        Debug.Log($"Player hit for {enemy.collisionDamage}");
+        EmotionResponseManager.Instance.EmotionInput(EmotionInputType.PlayerHitByCollision, enemy);
         health -= enemy.collisionDamage;
         StartCoroutine(HitCooldown());
 
