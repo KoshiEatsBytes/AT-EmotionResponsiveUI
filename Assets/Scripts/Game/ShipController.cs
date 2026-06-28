@@ -152,6 +152,12 @@ public class ShipController : MonoBehaviour
             return;
         }
 
+        if (!_canDodge)
+        {
+            // Player got hit after dodging (failed dodge)
+            EmotionResponseManager.Instance.EmotionInput(EmotionInputType.PlayerFailedDodge, null);
+        }
+
         EmotionResponseManager.Instance.EmotionInput(EmotionInputType.PlayerHitByBullet, bullet);
         health -= bullet.bulletDamage;
         StartCoroutine(HitCooldown());
@@ -171,6 +177,12 @@ public class ShipController : MonoBehaviour
             // Player did a successful dodge
             EmotionResponseManager.Instance.EmotionInput(EmotionInputType.PlayerSuccessfulDodge, null);
             return;
+        }
+
+        if (!_canDodge)
+        {
+            // Player got hit after dodging (failed dodge)
+            EmotionResponseManager.Instance.EmotionInput(EmotionInputType.PlayerFailedDodge, null);
         }
 
         EmotionResponseManager.Instance.EmotionInput(EmotionInputType.PlayerHitByCollision, enemy);

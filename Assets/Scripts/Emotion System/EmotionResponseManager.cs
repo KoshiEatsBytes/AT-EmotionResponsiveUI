@@ -1,11 +1,14 @@
+using System.Collections.Generic;
 using UnityEngine;
+using System.Text;
+using System.IO;
 
 public enum EmotionInputType
 {
     PlayerHitByBullet,
     PlayerHitByCollision,
     PlayerHitByBoss,
-    PlayerDodged,
+    PlayerFailedDodge,
     PlayerSuccessfulDodge
 }
 
@@ -24,6 +27,8 @@ public class EmotionResponseManager : MonoBehaviour
     private static float _emotionRegenRate = 2f;
     private float _emotionRegenCounter;
 
+    private StringBuilder _stringBuilder;
+
     private void Awake()
     {
         if (Instance == null)
@@ -40,15 +45,26 @@ public class EmotionResponseManager : MonoBehaviour
     private void Start()
     {
         emotionScore = 50f; // Start at 50 as baseline
+
+        _stringBuilder = new StringBuilder();
+        _stringBuilder.Append("Game Time,Emotion Input Type,Emotion Score Delta,Emotion Score Before,Emotion Score After");
+    }
+
+    private void OnDestroy()
+    {
+        ExportEmotionLog();
     }
 
     private void Update()
     {
+        emotionScore = Mathf.Clamp(emotionScore, 0f, 100f);
         EmotionRegen();
     }
 
     public void EmotionInput(EmotionInputType inputType, Object data)
     {
+        float emotionScoreBefore = emotionScore;
+
         switch (inputType)
         {
             case EmotionInputType.PlayerHitByBullet:
@@ -80,13 +96,29 @@ public class EmotionResponseManager : MonoBehaviour
             case EmotionInputType.PlayerHitByBoss:
                 break;
 
-            case EmotionInputType.PlayerDodged:
+            case EmotionInputType.PlayerFailedDodge:
+                if (NegativeInputChain())
+                {
+                    emotionScore += 10f * _negativeInputChainCount * _negativeInputChainCoefficient;
+                }
+                else
+                {
+                    emotionScore += 10f;
+                }
                 break;
 
             case EmotionInputType.PlayerSuccessfulDodge:
                 emotionScore -= 10f;
                 break;
         }
+
+        float emotionScoreDelta = emotionScore - emotionScoreBefore;
+        _stringBuilder.Append($"\n{RoundTo2Dec(Time.time)},{inputType},{RoundTo2Dec(emotionScoreDelta)},{RoundTo2Dec(emotionScoreBefore)},{RoundTo2Dec(emotionScore)}");
+    }
+
+    private float RoundTo2Dec(float input)
+    {
+        return Mathf.Round(input * 100f) / 100f;
     }
 
     /// <summary>
@@ -136,5 +168,18 @@ public class EmotionResponseManager : MonoBehaviour
         {
             _emotionRegenCounter -= Time.deltaTime;
         }
+    }
+
+    public void ExportEmotionLog()
+    {
+        string content = _stringBuilder.ToString();
+        string date = System.DateTime.Now.ToString().Replace('/', '_').Replace(':', '_');
+        string fileName = $"Emotion Score Log {date}.csv";
+        string filePath = Path.Combine(Application.persistentDataPath, fileName);
+
+        using var writer = new StreamWriter(filePath, false);
+        writer.Write(content);
+
+        Debug.Log($"Successfully exported file to -> {Application.persistentDataPath}");
     }
 }

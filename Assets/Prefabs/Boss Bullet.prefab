@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 3447908873178124452}
   - component: {fileID: 4698926332459617761}
   m_Layer: 5
-  m_Name: Enemy Bullet
+  m_Name: Boss Bullet
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -84,7 +84,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4225207037327159928}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5573737156ebe9748b7c5519efa36cdb, type: 3}
   m_Name: 
