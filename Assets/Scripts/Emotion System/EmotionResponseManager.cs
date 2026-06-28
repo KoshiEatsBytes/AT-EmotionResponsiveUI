@@ -5,7 +5,8 @@ public enum EmotionInputType
     PlayerHitByBullet,
     PlayerHitByCollision,
     PlayerHitByBoss,
-    PlayerDodged
+    PlayerDodged,
+    PlayerSuccessfulDodge
 }
 
 public class EmotionResponseManager : MonoBehaviour
@@ -80,6 +81,10 @@ public class EmotionResponseManager : MonoBehaviour
                 break;
 
             case EmotionInputType.PlayerDodged:
+                break;
+
+            case EmotionInputType.PlayerSuccessfulDodge:
+                emotionScore -= 10f;
                 break;
         }
     }

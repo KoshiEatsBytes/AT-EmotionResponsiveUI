@@ -14,11 +14,19 @@ public class ShipController : MonoBehaviour
     [SerializeField] private Bullet bulletPrefab;
     [SerializeField] private Transform bulletParent;
     [SerializeField] private float hitCooldown;
+    [SerializeField] private float dodgeDuration;
+    [SerializeField] private float dodgeCooldown;
+    [SerializeField] private float dodgeSpeed;
+    [SerializeField] private GameObject shieldSprite;
 
     private Vector2 _moveDir;
     private Vector2 _mousePos;
     private bool _isAttacking;
     private bool _isOnHitCooldown;
+    private bool _pressedDodge;
+    private bool _canDodge;
+    private bool _isImmune;
+    private bool _isDashing;
 
     private static readonly Vector2 _screenBounds = new Vector2(820f, 1000f);
     private InputSystem_Actions _playerInputs;
@@ -32,6 +40,9 @@ public class ShipController : MonoBehaviour
         _playerInputs.Enable();
         _mainCam = Camera.main;
         _isOnHitCooldown = false;
+        _canDodge = true;
+        _isImmune = false;
+        _isDashing = false;
 
         _bulletPool = new List<Bullet>();
         StartCoroutine(BulletFireCoroutine());
@@ -42,6 +53,7 @@ public class ShipController : MonoBehaviour
         HandleInputs();
         HandleMovement();
         HandleAttack();
+        HandleDodge();
     }
 
     private void HandleInputs()
@@ -49,11 +61,23 @@ public class ShipController : MonoBehaviour
         _moveDir = _playerInputs.Player.Move.ReadValue<Vector2>();
         _mousePos = _playerInputs.Player.Aim.ReadValue<Vector2>();
         _isAttacking = _playerInputs.Player.Attack.IsPressed();
+        _pressedDodge = _playerInputs.Player.Dodge.IsPressed();
     }
 
     private void HandleMovement()
     {
-        Vector2 targetPos = (Vector2)transform.localPosition + _moveDir * moveSpeed * Time.deltaTime;
+        Vector2 targetPos;
+
+        if (_isDashing)
+        {
+            targetPos = (Vector2)transform.localPosition + _moveDir * dodgeSpeed * Time.deltaTime;
+            targetPos.x = Mathf.Clamp(targetPos.x, -_screenBounds.x / 2, _screenBounds.x / 2);
+            targetPos.y = Mathf.Clamp(targetPos.y, -_screenBounds.y / 2, _screenBounds.y / 2);
+            transform.localPosition = targetPos;
+            return;
+        }
+
+        targetPos = (Vector2)transform.localPosition + _moveDir * moveSpeed * Time.deltaTime;
         targetPos.x = Mathf.Clamp(targetPos.x, -_screenBounds.x / 2, _screenBounds.x / 2);
         targetPos.y = Mathf.Clamp(targetPos.y, -_screenBounds.y / 2, _screenBounds.y / 2);
         transform.localPosition = targetPos;
@@ -70,6 +94,14 @@ public class ShipController : MonoBehaviour
         _aimVector.Normalize();
         float angle = Mathf.Atan2(_aimVector.y, _aimVector.x) * Mathf.Rad2Deg;
         transform.rotation = Quaternion.Euler(0f, 0f, angle - 90f);
+    }
+
+    private void HandleDodge()
+    {
+        if (_pressedDodge && _canDodge)
+        {
+            StartCoroutine(DodgeCoroutine());
+        }
     }
 
     private Bullet GetBullet()
@@ -113,6 +145,13 @@ public class ShipController : MonoBehaviour
 
         if (_isOnHitCooldown) return;
 
+        if (_isImmune)
+        {
+            // Player did a successful dodge
+            EmotionResponseManager.Instance.EmotionInput(EmotionInputType.PlayerSuccessfulDodge, null);
+            return;
+        }
+
         EmotionResponseManager.Instance.EmotionInput(EmotionInputType.PlayerHitByBullet, bullet);
         health -= bullet.bulletDamage;
         StartCoroutine(HitCooldown());
@@ -126,6 +165,13 @@ public class ShipController : MonoBehaviour
     private void OnHit(EnemyBase enemy)
     {
         if (_isOnHitCooldown) return;
+
+        if (_isImmune)
+        {
+            // Player did a successful dodge
+            EmotionResponseManager.Instance.EmotionInput(EmotionInputType.PlayerSuccessfulDodge, null);
+            return;
+        }
 
         EmotionResponseManager.Instance.EmotionInput(EmotionInputType.PlayerHitByCollision, enemy);
         health -= enemy.collisionDamage;
@@ -157,12 +203,32 @@ public class ShipController : MonoBehaviour
         }
     }
 
-
-    private void OnCollisionStay2D(Collision2D other)
+    private void OnCollisionEnter2D(Collision2D other)
     {
         if (other.gameObject.TryGetComponent(out EnemyBase enemy))
         {
             OnHit(enemy);
         }
+    }
+
+    private IEnumerator DodgeCoroutine()
+    {
+        _canDodge = false;
+        _isImmune = true;
+        _isDashing = true;
+        shieldSprite.SetActive(true);
+
+        yield return new WaitForSeconds(dodgeDuration / 3f);
+
+        _isDashing = false;
+
+        yield return new WaitForSeconds(dodgeDuration * 2f/3f);
+
+        _isImmune = false;
+        shieldSprite.SetActive(false);
+
+        yield return new WaitForSeconds(dodgeCooldown);
+
+        _canDodge = true;
     }
 }
