@@ -38,7 +38,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 103, y: 84}
+  m_SizeDelta: {x: 182, y: 182}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6436807399157649051
 CanvasRenderer:
@@ -90,14 +90,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5397f97a9897c974db2b20d1f6c60c93, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  health: 100
+  health: 75
   collisionDamage: 1
   moveSpeed: 150
   bulletDamage: 1
   bulletSpeed: 300
-  bulletFireCooldown: 1
-  isShooting: 0
+  bulletFireCooldown: 0.75
+  isShooting: 1
   movementType: 1
+  bulletPrefab: {fileID: 4225207037327159928, guid: 8be5582e8be9b5247bbb2d61e36670f6, type: 3}
+  angleOffsetStep: 10
+  bulletsPerCircle: 15
 --- !u!61 &3496661085337786209
 BoxCollider2D:
   m_ObjectHideFlags: 0

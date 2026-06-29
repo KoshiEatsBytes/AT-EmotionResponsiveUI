@@ -158,7 +158,17 @@ public class ShipController : MonoBehaviour
             EmotionResponseManager.Instance.EmotionInput(EmotionInputType.PlayerFailedDodge, null);
         }
 
-        EmotionResponseManager.Instance.EmotionInput(EmotionInputType.PlayerHitByBullet, bullet);
+        switch (bullet.bulletType)
+        {
+            case BulletType.Enemy:
+                EmotionResponseManager.Instance.EmotionInput(EmotionInputType.PlayerHitByBullet, bullet);
+                break;
+
+            case BulletType.Boss:
+                EmotionResponseManager.Instance.EmotionInput(EmotionInputType.PlayerHitByBoss, bullet);
+                break;
+        }
+
         health -= bullet.bulletDamage;
         StartCoroutine(HitCooldown());
 
@@ -208,7 +218,7 @@ public class ShipController : MonoBehaviour
     {
         if (other.TryGetComponent(out Bullet bullet))
         {
-            if (bullet.bulletType == BulletType.Enemy)
+            if (bullet.bulletType != BulletType.Player)
             {
                 OnHit(bullet);
             }

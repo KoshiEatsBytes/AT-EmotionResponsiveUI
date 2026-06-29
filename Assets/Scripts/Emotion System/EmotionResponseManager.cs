@@ -14,6 +14,8 @@ public enum EmotionInputType
 
 public class EmotionResponseManager : MonoBehaviour
 {
+    [SerializeField] private bool outputEmotionLog;
+
     public static EmotionResponseManager Instance;
 
     public float emotionScore; // 0 (low stress) to 100 (high stress)
@@ -21,13 +23,16 @@ public class EmotionResponseManager : MonoBehaviour
     private float _lastNegativeInputTime;
     private float _negativeInputChainDuration; // If player receives multiple negative input within this duration, they are considered as a chain
     private int _negativeInputChainCount;
-    private static float _negativeInputChainCoefficient = 0.3f;
 
     private static float _emotionRegenDelay = 5f;
     private static float _emotionRegenRate = 2f;
     private float _emotionRegenCounter;
 
     private StringBuilder _stringBuilder;
+
+    private int _hitsByBullet;
+    private int _hitsByCollision;
+    private int _hitsByBoss;
 
     private void Awake()
     {
@@ -52,7 +57,10 @@ public class EmotionResponseManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        ExportEmotionLog();
+        if (outputEmotionLog)
+        {
+            ExportEmotionLog();
+        }
     }
 
     private void Update()
@@ -68,11 +76,12 @@ public class EmotionResponseManager : MonoBehaviour
         switch (inputType)
         {
             case EmotionInputType.PlayerHitByBullet:
-                float bulletEmotionCoefficient = 5f;
+                _hitsByBullet++;
+                float bulletEmotionCoefficient = 10f;
                 Bullet bullet = (Bullet)data;
                 if (NegativeInputChain())
                 {
-                    emotionScore += bulletEmotionCoefficient * bullet.bulletDamage * _negativeInputChainCount * _negativeInputChainCoefficient;
+                    emotionScore += bulletEmotionCoefficient * bullet.bulletDamage * GetNegativeChainMultiplier(_negativeInputChainCount);
                 }
                 else
                 {
@@ -81,11 +90,12 @@ public class EmotionResponseManager : MonoBehaviour
                 break;
 
             case EmotionInputType.PlayerHitByCollision:
-                float collisionEmotionCoefficient = 7.5f;
+                _hitsByCollision++;
+                float collisionEmotionCoefficient = 12f;
                 EnemyBase enemy = (EnemyBase)data;
                 if (NegativeInputChain())
                 {
-                    emotionScore += collisionEmotionCoefficient * enemy.collisionDamage * _negativeInputChainCount * _negativeInputChainCoefficient;
+                    emotionScore += collisionEmotionCoefficient * enemy.collisionDamage * GetNegativeChainMultiplier(_negativeInputChainCount);
                 }
                 else
                 {
@@ -94,21 +104,32 @@ public class EmotionResponseManager : MonoBehaviour
                 break;
 
             case EmotionInputType.PlayerHitByBoss:
+                _hitsByBoss++;
+                float bossBulletEmotionCoefficient = 20f;
+                Bullet bossBullet = (Bullet)data;
+                if (NegativeInputChain())
+                {
+                    emotionScore += bossBulletEmotionCoefficient * bossBullet.bulletDamage * GetNegativeChainMultiplier(_negativeInputChainCount);
+                }
+                else
+                {
+                    emotionScore += bossBulletEmotionCoefficient * bossBullet.bulletDamage;
+                }
                 break;
 
             case EmotionInputType.PlayerFailedDodge:
                 if (NegativeInputChain())
                 {
-                    emotionScore += 10f * _negativeInputChainCount * _negativeInputChainCoefficient;
+                    emotionScore += 5f * GetNegativeChainMultiplier(_negativeInputChainCount);
                 }
                 else
                 {
-                    emotionScore += 10f;
+                    emotionScore += 5f;
                 }
                 break;
 
             case EmotionInputType.PlayerSuccessfulDodge:
-                emotionScore -= 10f;
+                emotionScore -= 5f;
                 break;
         }
 
@@ -181,5 +202,35 @@ public class EmotionResponseManager : MonoBehaviour
         writer.Write(content);
 
         Debug.Log($"Successfully exported file to -> {Application.persistentDataPath}");
+    }
+
+    public List<float> GetHitRatio()
+    {
+        int totalHits = _hitsByBoss + _hitsByBullet + _hitsByCollision;
+        int nonBossHits = _hitsByBullet + _hitsByCollision;
+
+        if (totalHits == 0) return null;
+
+        List<float> hitRatios = new List<float>();
+        hitRatios.Add(_hitsByBoss / totalHits);
+        hitRatios.Add(_hitsByBullet / totalHits);
+        hitRatios.Add(_hitsByCollision / totalHits);
+        if (nonBossHits != 0)
+        {
+            hitRatios.Add(_hitsByBullet / nonBossHits);
+            hitRatios.Add(_hitsByCollision / nonBossHits);
+        }
+        else
+        {
+            hitRatios.Add(0.5f);
+            hitRatios.Add(0.5f);
+        }
+
+        return hitRatios;
+    }
+
+    private float GetNegativeChainMultiplier(int chainCount)
+    {
+        return 0.02f * Mathf.Pow(chainCount, 2) + 1;
     }
 }

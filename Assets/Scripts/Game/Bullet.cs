@@ -3,7 +3,8 @@ using UnityEngine;
 public enum BulletType
 {
     Player,
-    Enemy
+    Enemy,
+    Boss
 }
 
 public class Bullet : MonoBehaviour
