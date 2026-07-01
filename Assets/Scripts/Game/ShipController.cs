@@ -5,6 +5,8 @@ using System.Collections.Generic;
 public class ShipController : MonoBehaviour
 {
     public int health;
+    public bool erraticMouseMovement;
+    public bool isSpammingDodge;
 
     [SerializeField] private float moveSpeed;
     [SerializeField] private float bulletFireCooldown;
@@ -34,6 +36,11 @@ public class ShipController : MonoBehaviour
     private Vector2 _aimVector;
     private List<Bullet> _bulletPool;
 
+    private Queue<float> _mouseDisplacements;
+    private Vector2 _lastMousePos;
+    private float _lastDodgeTime;
+    private float _dodgeSpamTimer;
+
     private void Awake()
     {
         _playerInputs = new InputSystem_Actions();
@@ -45,6 +52,8 @@ public class ShipController : MonoBehaviour
         _isDashing = false;
 
         _bulletPool = new List<Bullet>();
+        _mouseDisplacements = new Queue<float>();
+        _lastMousePos = Vector2.zero;
         StartCoroutine(BulletFireCoroutine());
     }
 
@@ -54,6 +63,11 @@ public class ShipController : MonoBehaviour
         HandleMovement();
         HandleAttack();
         HandleDodge();
+    }
+
+    private void FixedUpdate()
+    {
+        DetectErraticMouse();
     }
 
     private void HandleInputs()
@@ -101,6 +115,16 @@ public class ShipController : MonoBehaviour
         if (_pressedDodge && _canDodge)
         {
             StartCoroutine(DodgeCoroutine());
+            DetectDodgeSpam();
+        }
+
+        if (_dodgeSpamTimer >= 0)
+        {
+            _dodgeSpamTimer -= Time.deltaTime;
+        }
+        else
+        {
+            isSpammingDodge = false;
         }
     }
 
@@ -252,5 +276,44 @@ public class ShipController : MonoBehaviour
         yield return new WaitForSeconds(dodgeCooldown);
 
         _canDodge = true;
+    }
+
+    private void DetectErraticMouse()
+    {
+        float mouseDisplacement = Vector2.Distance(_mousePos, _lastMousePos);
+        _lastMousePos = _mousePos;
+        _mouseDisplacements.Enqueue(mouseDisplacement);
+
+        if (_mouseDisplacements.Count >= 10)
+        {
+            _mouseDisplacements.Dequeue();
+        }
+
+        float totalDisplacement = 0;
+        foreach (float i in _mouseDisplacements)
+        {
+            totalDisplacement += i;
+        }
+
+        if (totalDisplacement > 600f)
+        {
+            erraticMouseMovement = true;
+        }
+        else
+        {
+            erraticMouseMovement = false;
+        }
+    }
+
+    private void DetectDodgeSpam()
+    {
+        float timeSinceLastDodge = Time.time - _lastDodgeTime;
+        _lastDodgeTime = Time.time;
+
+        if (timeSinceLastDodge <= (dodgeDuration + dodgeCooldown) * 1.1f)
+        {
+            isSpammingDodge = true;
+            _dodgeSpamTimer = (dodgeDuration + dodgeCooldown) * 1.1f;
+        }
     }
 }

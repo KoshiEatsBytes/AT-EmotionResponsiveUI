@@ -21,13 +21,17 @@ public class EmotionResponseManager : MonoBehaviour
     public float emotionScore; // 0 (low stress) to 100 (high stress)
 
     private float _lastNegativeInputTime;
-    private float _negativeInputChainDuration; // If player receives multiple negative input within this duration, they are considered as a chain
+    private static float _negativeInputChainDuration = 3f; // If player receives multiple negative input within this duration, they are considered as a chain
     private int _negativeInputChainCount;
 
     private static float _emotionRegenDelay = 5f;
     private static float _emotionRegenRate = 2f;
     private float _emotionRegenCounter;
 
+    private static float _emotionDecayDodgeSpam = 1.5f;
+    private static float _emotionDecayErraticMouse = 1.5f;
+
+    private ShipController _shipController;
     private StringBuilder _stringBuilder;
 
     private int _hitsByBullet;
@@ -40,6 +44,8 @@ public class EmotionResponseManager : MonoBehaviour
         {
             DontDestroyOnLoad(this);
             Instance = this;
+
+            emotionScore = 50f;
         }
         else
         {
@@ -49,10 +55,9 @@ public class EmotionResponseManager : MonoBehaviour
 
     private void Start()
     {
-        emotionScore = 50f; // Start at 50 as baseline
-
         _stringBuilder = new StringBuilder();
         _stringBuilder.Append("Game Time,Emotion Input Type,Emotion Score Delta,Emotion Score Before,Emotion Score After");
+        _shipController = FindFirstObjectByType<ShipController>();
     }
 
     private void OnDestroy()
@@ -67,6 +72,18 @@ public class EmotionResponseManager : MonoBehaviour
     {
         emotionScore = Mathf.Clamp(emotionScore, 0f, 100f);
         EmotionRegen();
+
+        if (_shipController.isSpammingDodge)
+        {
+            _emotionRegenCounter = 1f;
+            emotionScore -= _emotionDecayDodgeSpam * Time.deltaTime;
+        }
+
+        if (_shipController.erraticMouseMovement)
+        {
+            _emotionRegenCounter = 1f;
+            emotionScore -= _emotionDecayErraticMouse * Time.deltaTime;
+        }
     }
 
     public void EmotionInput(EmotionInputType inputType, Object data)
@@ -105,7 +122,7 @@ public class EmotionResponseManager : MonoBehaviour
 
             case EmotionInputType.PlayerHitByBoss:
                 _hitsByBoss++;
-                float bossBulletEmotionCoefficient = 20f;
+                float bossBulletEmotionCoefficient = 15f;
                 Bullet bossBullet = (Bullet)data;
                 if (NegativeInputChain())
                 {
@@ -213,8 +230,6 @@ public class EmotionResponseManager : MonoBehaviour
 
         List<float> hitRatios = new List<float>();
         hitRatios.Add(_hitsByBoss / totalHits);
-        hitRatios.Add(_hitsByBullet / totalHits);
-        hitRatios.Add(_hitsByCollision / totalHits);
         if (nonBossHits != 0)
         {
             hitRatios.Add(_hitsByBullet / nonBossHits);
@@ -231,6 +246,6 @@ public class EmotionResponseManager : MonoBehaviour
 
     private float GetNegativeChainMultiplier(int chainCount)
     {
-        return 0.02f * Mathf.Pow(chainCount, 2) + 1;
+        return (0.04f * Mathf.Pow(chainCount, 2) + 1);
     }
 }

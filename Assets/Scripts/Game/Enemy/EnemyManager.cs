@@ -16,6 +16,8 @@ public class EnemyManager : MonoBehaviour
     private List<Bullet> _bulletPool;
     private List<Bullet> _bossBulletPool;
     private int _enemyToSpawn;
+    private int _rangedEnemies;
+    private int _meleeEnemies;
     private int _currentWave;
     private int _lastBossWave;
     private int _bossWaveInterval;
@@ -124,8 +126,17 @@ public class EnemyManager : MonoBehaviour
             // Spawn boss wave instead of normal wave in very low stress condition
             if (EmotionResponseManager.Instance.emotionScore <= 10 && _currentWave - _lastBossWave >= 2)
             {
-                SpawnBossWave();
-                _lastBossWave = _currentWave;
+                // 75% chance to spawn boss so the waves dont feel too repetitive
+                float random = Random.Range(0, 1);
+                if (random < 0.75)
+                {
+                    SpawnBossWave();
+                    _lastBossWave = _currentWave;
+                }
+                else
+                {
+                    SpawnNormalWave();
+                }
             }
             else
             {
@@ -136,49 +147,76 @@ public class EnemyManager : MonoBehaviour
 
     private void SpawnNormalWave()
     {
-        if (EmotionResponseManager.Instance.emotionScore <= 40)
-        {
-            // Low stress, increase difficulty
-            _enemyToSpawn = Mathf.Clamp(_enemyToSpawn + 1, 3, 10);
-            var hitRatios = EmotionResponseManager.Instance.GetHitRatio();
-            if (hitRatios == null)
-            {
-                SpawnRandomEnemy(_enemyToSpawn);
-                return;
-            }
-            // Spawn more enemy type the player struggled with
-            int rangedEnemyToSpawn = Mathf.RoundToInt(hitRatios[3] * _enemyToSpawn);
-            int meleeEnemyToSpawn = _enemyToSpawn - rangedEnemyToSpawn;
-            rangedEnemyToSpawn = Mathf.Clamp(rangedEnemyToSpawn, 2, 10);
-            meleeEnemyToSpawn = Mathf.Clamp(meleeEnemyToSpawn, 2, 10);
-            Debug.Log($"{_enemyToSpawn}, {rangedEnemyToSpawn}, {meleeEnemyToSpawn}");
-            SpawnRangedEnemy(rangedEnemyToSpawn);
-            SpawnMeleeEnemy(meleeEnemyToSpawn);
-        }
-        else if (EmotionResponseManager.Instance.emotionScore >= 60)
-        {
-            // High stress, lower difficulty
-            _enemyToSpawn = Mathf.Clamp(_enemyToSpawn - 1, 3, 10);
-            var hitRatios = EmotionResponseManager.Instance.GetHitRatio();
-            if (hitRatios == null)
-            {
-                SpawnRandomEnemy(_enemyToSpawn);
-                return;
-            }
-            // Spawn less enemy type the player struggled with
-            int rangedEnemyToSpawn = Mathf.RoundToInt(1 - hitRatios[3] * _enemyToSpawn);
-            int meleeEnemyToSpawn = _enemyToSpawn - rangedEnemyToSpawn;
-            rangedEnemyToSpawn = Mathf.Clamp(rangedEnemyToSpawn, 2, 10);
-            meleeEnemyToSpawn = Mathf.Clamp(meleeEnemyToSpawn, 2, 10);
-            Debug.Log($"{_enemyToSpawn}, {rangedEnemyToSpawn}, {meleeEnemyToSpawn}");
-            SpawnRangedEnemy(rangedEnemyToSpawn);
-            SpawnMeleeEnemy(meleeEnemyToSpawn);
-        }
-        else
+        float emotionScore = EmotionResponseManager.Instance.emotionScore;
+
+        if (emotionScore > 25 && emotionScore < 75)
         {
             // Flow state
             SpawnRandomEnemy(_enemyToSpawn);
         }
+        else
+        {
+            AdjustNormalWave();
+            SpawnRangedEnemy(_rangedEnemies);
+            SpawnMeleeEnemy(_meleeEnemies);
+
+            int remainingSlots = _enemyToSpawn - _rangedEnemies - _meleeEnemies;
+            if (remainingSlots > 0)
+            {
+                SpawnRandomEnemy(remainingSlots);
+            }
+        }
+    }
+
+    private void AdjustNormalWave()
+    {
+        float emotionScore = EmotionResponseManager.Instance.emotionScore;
+
+        // Adjust number of enemy per wave
+        if (emotionScore > 90)
+        {
+            _enemyToSpawn = Mathf.Clamp(_enemyToSpawn - 2, 4, 10);
+        }
+        else if (emotionScore < 10)
+        {
+            _enemyToSpawn = Mathf.Clamp(_enemyToSpawn + 2, 4, 10);
+        }
+        else if (emotionScore > 75)
+        {
+            _enemyToSpawn = Mathf.Clamp(_enemyToSpawn - 1, 4, 10);
+        }
+        else if (emotionScore < 25)
+        {
+            _enemyToSpawn = Mathf.Clamp(_enemyToSpawn + 1, 4, 10);
+        }
+
+        List<float> hitRatios = EmotionResponseManager.Instance.GetHitRatio();
+        if (hitRatios == null)
+        {
+            // Player has not been hit
+            _enemyToSpawn = Mathf.Clamp(_enemyToSpawn + 2, 4, 10);
+            _rangedEnemies = Mathf.RoundToInt(_enemyToSpawn * 0.5f);
+            _meleeEnemies = Mathf.RoundToInt(_enemyToSpawn * 0.5f);
+        }
+
+        float hitRatioBullet = hitRatios[1];
+        float hitRatioCollision = hitRatios[2];
+        // higher hit ratio means player gets hit by that more
+
+        // Adjust spawned enemy types
+        if (emotionScore > 75)
+        {
+            _rangedEnemies = Mathf.RoundToInt(_enemyToSpawn * hitRatioCollision);
+            _meleeEnemies = Mathf.RoundToInt(_enemyToSpawn * hitRatioBullet);
+        }
+        else if (emotionScore < 25)
+        {
+            _rangedEnemies = Mathf.RoundToInt(_enemyToSpawn * hitRatioBullet);
+            _meleeEnemies = Mathf.RoundToInt(_enemyToSpawn * hitRatioCollision);
+        }
+
+        _rangedEnemies = Mathf.Clamp(_rangedEnemies, 1, 10);
+        _meleeEnemies = Mathf.Clamp(_meleeEnemies, 1, 10);
     }
 
     private void SpawnBossWave()
