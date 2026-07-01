@@ -24,6 +24,8 @@ public class EmotionResponseManager : MonoBehaviour
     private static float _negativeInputChainDuration = 3f; // If player receives multiple negative input within this duration, they are considered as a chain
     private int _negativeInputChainCount;
 
+    private float _minEmotionScore;
+    private float _maxEmotionScore;
     private static float _emotionRegenDelay = 5f;
     private static float _emotionRegenRate = 2f;
     private float _emotionRegenCounter;
@@ -46,6 +48,8 @@ public class EmotionResponseManager : MonoBehaviour
             Instance = this;
 
             emotionScore = 50f;
+            _minEmotionScore = 0f;
+            _maxEmotionScore = 100f;
         }
         else
         {
@@ -70,7 +74,7 @@ public class EmotionResponseManager : MonoBehaviour
 
     private void Update()
     {
-        emotionScore = Mathf.Clamp(emotionScore, 0f, 100f);
+        emotionScore = Mathf.Clamp(emotionScore, _minEmotionScore, _maxEmotionScore);
         EmotionRegen();
 
         if (_shipController.isSpammingDodge)
@@ -83,6 +87,20 @@ public class EmotionResponseManager : MonoBehaviour
         {
             _emotionRegenCounter = 1f;
             emotionScore -= _emotionDecayErraticMouse * Time.deltaTime;
+        }
+
+        // Caps the minimum emotion score based on player health
+        if (_shipController.health <= 1)
+        {
+            _minEmotionScore = 80f;
+        }
+        else if (_shipController.health <= 3)
+        {
+            _minEmotionScore = 50f;
+        }
+        else
+        {
+            _minEmotionScore = 0f;
         }
     }
 
@@ -146,7 +164,7 @@ public class EmotionResponseManager : MonoBehaviour
                 break;
 
             case EmotionInputType.PlayerSuccessfulDodge:
-                emotionScore -= 5f;
+                //emotionScore -= 5f;
                 break;
         }
 
